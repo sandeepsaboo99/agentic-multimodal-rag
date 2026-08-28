@@ -1,0 +1,17 @@
+[
+  {
+    "question": "What is the primary goal described in the document?",
+    "expected_source": "",
+    "expected_answer": ""
+  },
+  {
+    "question": "Summarize the key findings in the report.",
+    "expected_source": "",
+    "expected_answer": ""
+  },
+  {
+    "question": "What are the total figures shown in the financial table?",
+    "expected_source": "",
+    "expected_answer": ""
+  }
+]

@@ -1,0 +1,45 @@
+# ---- Web / API layer ----
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# ---- Frontend ----
+streamlit==1.41.1
+plotly==5.24.1
+pandas==2.2.3
+requests==2.32.3
+
+# ---- LLM (open, via Groq) ----
+groq==0.15.0
+tiktoken==0.8.0
+
+# ---- Text splitting / chunking ----
+langchain-text-splitters==0.3.4
+
+# ---- Embeddings + Reranking (open source, local) ----
+sentence-transformers==3.3.1
+# torch is pulled in by sentence-transformers; pin if you need a specific build
+
+# ---- Vector store (dense + NATIVE sparse/BM25-IDF hybrid) ----
+qdrant-client==1.12.1
+
+# ---- Multimodal parsing ----
+pymupdf==1.25.1          # fitz: fast PDF text + image extraction
+pdfplumber==0.11.4       # high-fidelity table extraction
+pillow==11.0.0
+
+# ---- Web search tool (no API key needed) ----
+ddgs==9.0.0
+
+# ---- Metadata DB + auth ----
+SQLAlchemy==2.0.36
+psycopg2-binary==2.9.10   # Postgres driver (prod / docker-compose); SQLite needs no driver
+python-jose[cryptography]==3.3.0
+passlib==1.7.4
+bcrypt==4.0.1             # pinned: passlib 1.7.4 is incompatible with bcrypt>=4.1
+
+# ---- Observability ----
+psutil==6.1.1
+numpy==1.26.4

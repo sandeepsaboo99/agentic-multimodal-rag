@@ -1,0 +1,78 @@
+# ============================================================================
+# InsightRAG — local production-like stack.
+#
+# Services mirror the target architecture's independently-scalable components:
+#   qdrant    - vector DB
+#   postgres  - metadata / ACL DB (system of record)
+#   api       - FastAPI gateway + services
+#   worker    - async ingestion consumer (scale this separately from api)
+#   frontend  - Streamlit demo/admin UI
+#
+# In real production you'd also add: object storage (S3/MinIO), a managed queue
+# (SQS/Redis), a secrets manager, and an API gateway/ingress with TLS.
+# ============================================================================
+version: "3.9"
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.1
+    ports: ["6333:6333"]
+    volumes: ["qdrant_data:/qdrant/storage"]
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: insight
+      POSTGRES_PASSWORD: insight
+      POSTGRES_DB: insightrag
+    ports: ["5432:5432"]
+    volumes: ["pg_data:/var/lib/postgresql/data"]
+
+  api:
+    build: { context: ., dockerfile: Dockerfile.backend }
+    env_file: .env
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      DATABASE_URL: postgresql+psycopg2://insight:insight@postgres:5432/insightrag
+      OBJECT_STORAGE_PATH: /data/objects
+    volumes: ["object_data:/data/objects"]
+    ports: ["8000:8000"]
+    depends_on: [qdrant, postgres]
+
+  worker:
+    build: { context: ., dockerfile: Dockerfile.backend }
+    command: ["python", "-m", "worker.ingestion_worker"]
+    env_file: .env
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      DATABASE_URL: postgresql+psycopg2://insight:insight@postgres:5432/insightrag
+      OBJECT_STORAGE_PATH: /data/objects
+    volumes: ["object_data:/data/objects"]
+    depends_on: [qdrant, postgres]
+    deploy:
+      replicas: 2   # scale ingestion independently of request serving
+
+  # Streamlit demo/admin UI (internal-facing)
+  frontend:
+    build: { context: ., dockerfile: Dockerfile.frontend }
+    environment:
+      BACKEND_URL: http://api:8000
+    ports: ["8501:8501"]
+    depends_on: [api]
+
+  # React/Next.js production frontend (consumer-facing).
+  # NEXT_PUBLIC_BACKEND_URL is read from the browser, so it points at the
+  # host-mapped API port, not the internal compose DNS name.
+  web:
+    build:
+      context: ./frontend-next
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+volumes:
+  qdrant_data:
+  pg_data:
+  object_data:
